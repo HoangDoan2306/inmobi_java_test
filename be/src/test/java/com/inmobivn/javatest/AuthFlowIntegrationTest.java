@@ -56,7 +56,7 @@ class AuthFlowIntegrationTest {
         mockMvc.perform(get("/api/user/me")
                 .header("Authorization", "Bearer " + authResponse.getToken()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.username").value("integration-user"));
+            .andExpect(jsonPath("$.scrId").value(authResponse.getScrId()));
     }
 
     @Test

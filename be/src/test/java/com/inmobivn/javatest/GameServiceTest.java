@@ -23,6 +23,7 @@ class GameServiceTest {
     @Test 
     void shouldIncreaseScoreWhenGuessIsCorrect() { 
         User user = new User(); 
+        user.setScrId("SCR-PLAYER1");
         user.setUsername("player1"); 
         user.setPassword("hashed"); 
         user.setScore(0); 
@@ -44,6 +45,7 @@ class GameServiceTest {
     @Test 
     void shouldConsumeTurnAndKeepScoreWhenGuessIsIncorrect() { 
         User user = new User(); 
+        user.setScrId("SCR-PLAYER2");
         user.setUsername("player2"); 
         user.setPassword("hashed"); 
         user.setScore(5); 
@@ -65,6 +67,7 @@ class GameServiceTest {
     @Test 
     void shouldRejectWhenNoTurnsRemain() { 
         User user = new User(); 
+        user.setScrId("SCR-PLAYER3");
         user.setUsername("player3"); 
         user.setPassword("hashed"); 
         user.setScore(0); 
@@ -80,6 +83,7 @@ class GameServiceTest {
     @Test 
     void shouldAddFiveTurnsWhenBuyingTurns() { 
         User user = new User(); 
+        user.setScrId("SCR-PLAYER4");
         user.setUsername("player4"); 
         user.setPassword("hashed"); 
         user.setScore(0); 

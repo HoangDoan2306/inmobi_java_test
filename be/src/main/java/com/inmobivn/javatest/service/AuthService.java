@@ -7,16 +7,16 @@ import com.inmobivn.javatest.entity.User;
 import com.inmobivn.javatest.exception.InvalidCredentialsException;
 import com.inmobivn.javatest.exception.UsernameAlreadyExistsException;
 import com.inmobivn.javatest.repository.UserRepository;
+import com.inmobivn.javatest.security.CustomUserDetails;
 import com.inmobivn.javatest.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -43,19 +43,15 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setScrId(generateUuidScrId());
         user.setScore(0);
         user.setTurns(0);
 
         userRepository.save(user);
 
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                Collections.emptyList()
-        );
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(user);
 
-        return new AuthResponse(token, user.getUsername());
+        return new AuthResponse(token, user.getScrId());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -64,12 +60,16 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             String token = jwtService.generateToken(userDetails);
 
-            return new AuthResponse(token, userDetails.getUsername());
+            return new AuthResponse(token, userDetails.getScrId());
         } catch (Exception e) {
             throw new InvalidCredentialsException("Invalid username or password");
         }
+    }
+
+    public String generateUuidScrId() {
+        return "SCR-" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
     }
 }

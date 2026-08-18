@@ -27,16 +27,16 @@ public class GameService {
     /**
      * Handles a guess with pessimistic locking to ensure concurrent requests
      * don't cause lost updates or negative turns.
-     * 
-     * Strategy: Database-level PESSIMISTIC_WRITE lock acquired via findByUsernameForUpdate.
+     *
+     * Strategy: Database-level PESSIMISTIC_WRITE lock acquired via findByScrIdForUpdate.
      * This ensures only one request can consume a turn, preventing race conditions
      * when multiple guesses arrive simultaneously for the same user.
      */
     @Transactional
     public GuessResponse guess(User user, Integer guess) {
-        // Reload user with pessimistic lock to prevent concurrent turn consumption
-        User lockedUser = userRepository.findByUsernameForUpdate(user.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        // Reload user with pessimistic lock by scrId to prevent concurrent turn consumption
+        User lockedUser = userRepository.findByScrIdForUpdate(user.getScrId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with scrId: " + user.getScrId()));
 
         if (lockedUser.getTurns() <= 0) {
             throw new NotEnoughTurnsException("No turns remaining. Buy more turns to continue playing.");
@@ -54,7 +54,7 @@ public class GameService {
             lockedUser.setScore(lockedUser.getScore() + 1);
         }
 
-        // Save changes (only 1 request per concurrent batch succeeds due to lock)
+        // Save changes
         userRepository.save(lockedUser);
 
         return new GuessResponse(correct, guess, serverNumber, lockedUser.getScore(), lockedUser.getTurns());
@@ -62,20 +62,20 @@ public class GameService {
 
     @Transactional
     public UserSummaryDto buyTurns(User user) {
-        User lockedUser = userRepository.findByUsernameForUpdate(user.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User lockedUser = userRepository.findByScrIdForUpdate(user.getScrId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with scrId: " + user.getScrId()));
 
         lockedUser.setTurns(lockedUser.getTurns() + 5);
         userRepository.save(lockedUser);
 
-        return new UserSummaryDto(lockedUser.getUsername(), lockedUser.getScore(), lockedUser.getTurns());
+        return new UserSummaryDto(lockedUser.getScrId(), lockedUser.getScore(), lockedUser.getTurns());
     }
 
     @Transactional(readOnly = true)
     public List<LeaderboardEntryDto> getLeaderboard() {
         Pageable pageable = PageRequest.of(0, 10);
-        return userRepository.findTop10ByOrderByScoreDescUsernameAsc(pageable).stream()
-                .map(user -> new LeaderboardEntryDto(user.getUsername(), user.getScore()))
+        return userRepository.findTop10ByOrderByScoreDescScrIdAsc(pageable).stream()
+                .map(user -> new LeaderboardEntryDto(user.getScrId(), user.getScore()))
                 .toList();
     }
 }

@@ -1,5 +1,6 @@
 package com.inmobivn.javatest.security;
 
+import com.inmobivn.javatest.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -21,21 +22,38 @@ public class JwtService {
     private long jwtExpiration;
 
     public String generateToken(UserDetails userDetails) {
+        String scrId = userDetails instanceof CustomUserDetails ? ((CustomUserDetails) userDetails).getScrId() : "";
         return Jwts.builder()
-                .subject(userDetails.getUsername())
+                .subject(scrId)
+                .claim("scrId", scrId)
+                .claim("username", userDetails.getUsername())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    public String generateToken(User user) {
+        return Jwts.builder()
+                .subject(user.getScrId())
+                .claim("scrId", user.getScrId())
+                .claim("username", user.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String extractScrId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    public String extractUsername(String token) {
+        return extractClaim(token, claims -> claims.get("username", String.class));
+    }
+
+    public boolean isTokenValid(String token) {
+        return !isTokenExpired(token);
     }
 
     public boolean isTokenExpired(String token) {

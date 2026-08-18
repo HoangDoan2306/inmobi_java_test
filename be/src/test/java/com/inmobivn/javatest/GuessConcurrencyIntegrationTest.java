@@ -28,6 +28,7 @@ class GuessConcurrencyIntegrationTest {
     @Test
     void shouldOnlyConsumeOneTurnAcrossConcurrentRequests() throws InterruptedException, ExecutionException {
         User user = new User();
+        user.setScrId("SCR-CONCURRENT");
         user.setUsername("concurrent-player");
         user.setPassword("hashed");
         user.setScore(0);

@@ -50,7 +50,25 @@
                   </p>
                 </div>
               </div>
-
+              <div>
+                <NuxtLink
+                to="/leaderboard"
+                class="mr-2 group inline-flex items-center gap-2 bg-white/10 border border-white/10 text-white/70 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white hover:text-black transition-all"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  class="w-4 h-4"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                Leaderboard
+              </NuxtLink>
               <button
                 @click="handleLogout"
                 class="group inline-flex items-center gap-2 bg-white/10 border border-white/10 text-white/70 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-white hover:text-black transition-all"
@@ -69,6 +87,7 @@
                 </svg>
                 Logout
               </button>
+              </div>
             </div>
 
             <!-- Stats -->
@@ -382,7 +401,7 @@ const buttonClass = (num: number) => {
   }
   
   if (selected) {
-    return base + 'bg-blue-600 text-white border-2 border-blue-800';
+    return base + 'bg-gradient-to-br from-[#7040ff] via-[#863cff] to-[#a33cff] text-white border-2 border-[#7040ff]';
   }
   
   return base + 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400';

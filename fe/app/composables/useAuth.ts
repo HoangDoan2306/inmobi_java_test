@@ -67,6 +67,7 @@ export function useAuth() {
       });
 
       token.value = response.token;
+      //Đáng lẽ phải lưu cookie httpOnly nhưng do FE và BE sẽ được deloy trên MT khác nhau nên không thể set cookie httpOnly được. Nên tạm thời lưu token vào localStorage để tiện cho việc deloy free.
       localStorage.setItem('auth_token', response.token);
       document.cookie = `auth_token=${response.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
 
@@ -216,7 +217,11 @@ export function useAuth() {
     error.value = null;
 
     try {
-      return await $fetch<LeaderboardEntry[]>(`${apiBase}/game/leaderboard`);
+      return await $fetch<LeaderboardEntry[]>(`${apiBase}/game/leaderboard`, {
+         headers: {
+          'Authorization': `Bearer ${token.value}`
+        }
+      });
     } catch (err: any) {
       error.value = err.data?.message || 'Failed to fetch leaderboard';
       throw err;

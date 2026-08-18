@@ -1,3 +1,4 @@
+import { getCookie } from 'h3';
 export default defineNuxtRouteMiddleware(async () => {
   const { token, user, fetchCurrentUser } = useAuth();
 

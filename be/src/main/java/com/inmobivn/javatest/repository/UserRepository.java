@@ -13,13 +13,21 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    // 1. Giữ cho luồng Authentication & Registration (Login / Register)
     Optional<User> findByUsername(String username);
 
     boolean existsByUsername(String username);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select u from User u where u.username = :username")
-    Optional<User> findByUsernameForUpdate(@Param("username") String username);
+    // 2. Định danh chính dùng cho toàn bộ Business Logic
+    Optional<User> findByScrId(String scrId);
 
-    List<User> findTop10ByOrderByScoreDescUsernameAsc(Pageable pageable);
+    boolean existsByScrId(String scrId);
+
+    void deleteByScrId(String scrId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.scrId = :scrId")
+    Optional<User> findByScrIdForUpdate(@Param("scrId") String scrId);
+
+    List<User> findTop10ByOrderByScoreDescScrIdAsc(Pageable pageable);
 }
