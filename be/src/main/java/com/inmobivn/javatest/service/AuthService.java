@@ -1,0 +1,75 @@
+package com.inmobivn.javatest.service;
+
+import com.inmobivn.javatest.dto.AuthResponse;
+import com.inmobivn.javatest.dto.LoginRequest;
+import com.inmobivn.javatest.dto.RegisterRequest;
+import com.inmobivn.javatest.entity.User;
+import com.inmobivn.javatest.exception.InvalidCredentialsException;
+import com.inmobivn.javatest.exception.UsernameAlreadyExistsException;
+import com.inmobivn.javatest.repository.UserRepository;
+import com.inmobivn.javatest.security.JwtService;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+
+@Service
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
+                       AuthenticationManager authenticationManager) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.authenticationManager = authenticationManager;
+    }
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new UsernameAlreadyExistsException("Username already exists: " + request.getUsername());
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setScore(0);
+        user.setTurns(0);
+
+        userRepository.save(user);
+
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                Collections.emptyList()
+        );
+        String token = jwtService.generateToken(userDetails);
+
+        return new AuthResponse(token, user.getUsername());
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String token = jwtService.generateToken(userDetails);
+
+            return new AuthResponse(token, userDetails.getUsername());
+        } catch (Exception e) {
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
+    }
+}
