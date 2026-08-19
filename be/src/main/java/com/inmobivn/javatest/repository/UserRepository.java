@@ -13,12 +13,10 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    // 1. Giữ cho luồng Authentication & Registration (Login / Register)
     Optional<User> findByUsername(String username);
 
     boolean existsByUsername(String username);
 
-    // 2. Định danh chính dùng cho toàn bộ Business Logic
     Optional<User> findByScrId(String scrId);
 
     boolean existsByScrId(String scrId);

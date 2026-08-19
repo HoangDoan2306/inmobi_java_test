@@ -7,7 +7,6 @@ import com.inmobivn.javatest.entity.User;
 import com.inmobivn.javatest.exception.NotEnoughTurnsException;
 import com.inmobivn.javatest.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,18 +26,9 @@ public class GameService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Handles a guess with pessimistic locking to ensure concurrent requests
-     * don't cause lost updates or negative turns.
-     *
-     * Strategy: Database-level PESSIMISTIC_WRITE lock acquired via findByScrIdForUpdate.
-     * This ensures only one request can consume a turn, preventing race conditions
-     * when multiple guesses arrive simultaneously for the same user.
-     */
     @Transactional
     @CacheEvict(value = "user_profile", key = "#user.scrId")
     public GuessResponse guess(User user, Integer guess) {
-        // Reload user with pessimistic lock by scrId to prevent concurrent turn consumption
         User lockedUser = userRepository.findByScrIdForUpdate(user.getScrId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found with scrId: " + user.getScrId()));
 
@@ -46,19 +36,25 @@ public class GameService {
             throw new NotEnoughTurnsException("No turns remaining. Buy more turns to continue playing.");
         }
 
-        // Consume turn atomically within transaction
-        lockedUser.setTurns(lockedUser.getTurns() - 1);
+        int winChance = random.nextInt(100);
+        boolean correct;
+        int serverNumber;
 
-        // Generate server number
-        int serverNumber = random.nextInt(5) + 1; // 1-5
+        if (winChance <= 5) {
+            serverNumber = guess;
+            correct = true;
+            lockedUser.setScore(lockedUser.getScore() + 1);
+        } else {
+            do {
+                serverNumber = random.nextInt(5) + 1; // 1 đến 5
+            } while (serverNumber == guess);
+            correct = false;
+        }
 
-        // Check if correct
-        boolean correct = guess.equals(serverNumber);
         if (correct) {
             lockedUser.setScore(lockedUser.getScore() + 1);
         }
 
-        // Save changes
         userRepository.save(lockedUser);
 
         return new GuessResponse(correct, guess, serverNumber, lockedUser.getScore(), lockedUser.getTurns());
