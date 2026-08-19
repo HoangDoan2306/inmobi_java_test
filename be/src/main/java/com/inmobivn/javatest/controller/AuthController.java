@@ -3,6 +3,8 @@ package com.inmobivn.javatest.controller;
 import com.inmobivn.javatest.dto.AuthResponse;
 import com.inmobivn.javatest.dto.LoginRequest;
 import com.inmobivn.javatest.dto.RegisterRequest;
+import com.inmobivn.javatest.entity.User;
+import com.inmobivn.javatest.security.JwtService;
 import com.inmobivn.javatest.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,14 +19,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+        User user = authService.registerAndCacheUser(request);
+        String token = jwtService.generateToken(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(token, user.getScrId()));
     }
 
     @PostMapping("/login")

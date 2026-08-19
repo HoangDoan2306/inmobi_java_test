@@ -3,9 +3,11 @@ package com.inmobivn.javatest.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class GuessRequest {
 
     @NotNull(message = "Guess is required")

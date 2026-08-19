@@ -6,6 +6,9 @@ import com.inmobivn.javatest.dto.UserSummaryDto;
 import com.inmobivn.javatest.entity.User;
 import com.inmobivn.javatest.exception.NotEnoughTurnsException;
 import com.inmobivn.javatest.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ public class GameService {
      * when multiple guesses arrive simultaneously for the same user.
      */
     @Transactional
+    @CacheEvict(value = "user_profile", key = "#user.scrId")
     public GuessResponse guess(User user, Integer guess) {
         // Reload user with pessimistic lock by scrId to prevent concurrent turn consumption
         User lockedUser = userRepository.findByScrIdForUpdate(user.getScrId())
@@ -61,6 +65,7 @@ public class GameService {
     }
 
     @Transactional
+    @CacheEvict(value = "user_profile", key = "#user.scrId")
     public UserSummaryDto buyTurns(User user) {
         User lockedUser = userRepository.findByScrIdForUpdate(user.getScrId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found with scrId: " + user.getScrId()));
@@ -72,10 +77,11 @@ public class GameService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "leaderboard", key = "'top10'")
     public List<LeaderboardEntryDto> getLeaderboard() {
         Pageable pageable = PageRequest.of(0, 10);
         return userRepository.findTop10ByOrderByScoreDescScrIdAsc(pageable).stream()
-                .map(user -> new LeaderboardEntryDto(user.getScrId(), user.getScore()))
+                .map(user -> new LeaderboardEntryDto(user.getUsername(), user.getScore()))
                 .toList();
     }
 }

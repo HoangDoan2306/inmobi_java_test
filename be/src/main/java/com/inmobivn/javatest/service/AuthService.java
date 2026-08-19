@@ -9,6 +9,7 @@ import com.inmobivn.javatest.exception.UsernameAlreadyExistsException;
 import com.inmobivn.javatest.repository.UserRepository;
 import com.inmobivn.javatest.security.CustomUserDetails;
 import com.inmobivn.javatest.security.JwtService;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,7 +36,8 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    @CachePut(value = "user_profile", key = "#result.scrId")
+    public User registerAndCacheUser(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new UsernameAlreadyExistsException("Username already exists: " + request.getUsername());
         }
@@ -47,7 +49,14 @@ public class AuthService {
         user.setScore(0);
         user.setTurns(0);
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        return savedUser;
+    }
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        User user = registerAndCacheUser(request);
 
         String token = jwtService.generateToken(user);
 

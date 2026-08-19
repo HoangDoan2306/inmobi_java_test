@@ -331,7 +331,7 @@
 
             <button
               @click="buyTurns"
-              :disabled="loading || user?.turns >= 20"
+              :disabled="loading"
               class="w-full sm:w-auto bg-white text-black px-6 py-3 rounded-xl font-semibold text-sm hover:bg-gradient-to-r hover:from-[#7040ff] hover:via-[#863cff] hover:to-[#a33cff] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading ? 'Buying...' : 'Buy 5 Turns' }}
