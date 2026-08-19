@@ -17,9 +17,9 @@ public class LeaderboardScheduler {
         this.gameService = gameService;
     }
 
-//    @Scheduled(fixedRate = 60000)
-//    @CachePut(value = "leaderboard", key = "'top10'")
-//    public List<LeaderboardEntryDto> refreshLeaderboardCache() {
-//        return gameService.getLeaderboard();
-//    }
+    @Scheduled(fixedRate = 60000)
+    @CachePut(value = "leaderboard", key = "'top10'")
+    public List<LeaderboardEntryDto> refreshLeaderboardCache() {
+        return gameService.loadLeaderboardFromDb();
+    }
 }

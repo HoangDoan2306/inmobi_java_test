@@ -71,13 +71,21 @@ public class GameService {
     }
 
     @Transactional(readOnly = true)
-//    @Cacheable(value = "leaderboard", key = "'top10'")
-    public List<LeaderboardEntryDto> getLeaderboard() {
-        System.out.println("========== LEADERBOARD DEBUG ==========");
-        System.out.println("TOTAL USERS = " + userRepository.count());
+    public List<LeaderboardEntryDto> loadLeaderboardFromDb() {
         Pageable pageable = PageRequest.of(0, 10);
-        return userRepository.findTop10ByOrderByScoreDescScrIdAsc(pageable).stream()
-                .map(user -> new LeaderboardEntryDto(user.getUsername(), user.getScore()))
+
+        return userRepository
+                .findTop10ByOrderByScoreDescScrIdAsc(pageable)
+                .stream()
+                .map(user -> new LeaderboardEntryDto(
+                        user.getUsername(),
+                        user.getScore()
+                ))
                 .toList();
+    }
+
+    @Cacheable(value = "leaderboard", key = "'top10'")
+    public List<LeaderboardEntryDto> getLeaderboard() {
+        return loadLeaderboardFromDb();
     }
 }
