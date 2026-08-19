@@ -1,8 +1,10 @@
 package com.inmobivn.javatest;
 
 import com.inmobivn.javatest.entity.User;
+import com.inmobivn.javatest.exception.NotEnoughTurnsException;
 import com.inmobivn.javatest.repository.UserRepository;
 import com.inmobivn.javatest.service.GameService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,38 +27,82 @@ class GuessConcurrencyIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @BeforeEach
+    void cleanUp() {
+        userRepository.deleteAll();
+    }
+
     @Test
-    void shouldOnlyConsumeOneTurnAcrossConcurrentRequests() throws InterruptedException, ExecutionException {
+    void shouldAllowOnlyOneSuccessfulGuessWhenThereIsOneTurn()
+            throws InterruptedException, ExecutionException {
+
         User user = new User();
         user.setScrId("SCR-CONCURRENT");
         user.setUsername("concurrent-player");
         user.setPassword("hashed");
         user.setScore(0);
         user.setTurns(1);
-        user = userRepository.save(user);
-        final User savedUser = user;
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
-        List<Future<?>> futures = new ArrayList<>();
+        user = userRepository.saveAndFlush(user);
 
-        for (int i = 0; i < 10; i++) {
-            futures.add(executor.submit(() -> {
-                try {
-                    gameService.guess(savedUser, 3);
-                } catch (Exception ignored) {
-                    // expected for failed concurrent attempts
+        final String scrId = user.getScrId();
+
+        ExecutorService executor =
+                Executors.newFixedThreadPool(10);
+
+        try {
+            List<Future<Boolean>> futures = new ArrayList<>();
+
+            for (int i = 0; i < 10; i++) {
+                futures.add(
+                        executor.submit(() -> {
+                            try {
+                                gameService.guess(
+                                        new UserReference(scrId),
+                                        3
+                                );
+
+                                return true;
+                            } catch (NotEnoughTurnsException e) {
+                                return false;
+                            }
+                        })
+                );
+            }
+
+            int successCount = 0;
+
+            for (Future<Boolean> future : futures) {
+                if (future.get()) {
+                    successCount++;
                 }
-            }));
+            }
+
+            /*
+             * Only one request can consume the only available turn.
+             */
+            assertThat(successCount)
+                    .isEqualTo(1);
+
+            User refreshed = userRepository
+                    .findByScrId(scrId)
+                    .orElseThrow();
+
+            assertThat(refreshed.getTurns())
+                    .isZero();
+
+            assertThat(refreshed.getScore())
+                    .isBetween(0, 1);
+
+        } finally {
+            executor.shutdown();
         }
+    }
 
-        for (Future<?> future : futures) {
-            future.get();
+    private static class UserReference extends User {
+
+        UserReference(String scrId) {
+            setScrId(scrId);
         }
-
-        executor.shutdown();
-
-        User refreshed = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(refreshed.getTurns()).isGreaterThanOrEqualTo(0);
-        assertThat(refreshed.getScore()).isBetween(0, 1);
     }
 }

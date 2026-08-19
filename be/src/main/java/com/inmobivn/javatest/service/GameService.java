@@ -36,6 +36,8 @@ public class GameService {
             throw new NotEnoughTurnsException("No turns remaining. Buy more turns to continue playing.");
         }
 
+        lockedUser.setTurns(lockedUser.getTurns() - 1);
+
         int winChance = random.nextInt(100);
         boolean correct;
         int serverNumber;
@@ -49,10 +51,6 @@ public class GameService {
                 serverNumber = random.nextInt(5) + 1; // 1 đến 5
             } while (serverNumber == guess);
             correct = false;
-        }
-
-        if (correct) {
-            lockedUser.setScore(lockedUser.getScore() + 1);
         }
 
         userRepository.save(lockedUser);
