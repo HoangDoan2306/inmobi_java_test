@@ -34,7 +34,7 @@ Project có 2 cách sử dụng.
 
 ### Option 1 — Sử dụng phiên bản đã deploy
 
-Project đã được deploy tại:
+Project đã được deploy tại: Nếu truy cập lần đầu thì cần đợi khoảng 1 phút để BE có thể khởi động lên.
 
 FE: https://inmobi-java-test.vercel.app/
 
@@ -299,7 +299,7 @@ Authenticated API
 
 ## 6. Test nhanh API
 
-Có thể truy cập project đã deloy để test trên giao diện: https://inmobi-java-test.vercel.app/
+Có thể truy cập project đã deloy để test trên giao diện: https://inmobi-java-test.vercel.app/ .Nếu truy cập lần đầu thì cần đợi khoảng 1 phút để BE có thể khởi động lên.
 
 Backend mặc định chạy tại:
 
